@@ -108,7 +108,7 @@ test('an expired feed returns immediately while exactly one background refresh r
 test('search metadata, structured data, and share assets are present in server HTML',async()=>{
   const worker=(await import('../dist/server/index.js?test=seo')).default;
   const html=await (await worker.fetch(new Request('https://site.test/'))).text();
-  assert.match(html,/<title>Sami Mustafa \| Front End Developer &amp; Instructor<\/title>|<title>Sami Mustafa \| Front End Developer & Instructor<\/title>/);
+  assert.match(html,/<title>Sami Mustafa \| Developer &amp; Instructor<\/title>|<title>Sami Mustafa \| Developer & Instructor<\/title>/);
   for(const tag of ['og:title','og:description','og:url','og:image','twitter:card','twitter:image'])assert.ok(html.includes(tag));
   const schema=JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
   assert.equal(schema['@graph'].find(v=>v['@type']==='Person').name,'Sami Mustafa');
