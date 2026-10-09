@@ -62,10 +62,10 @@ test('revoked credentials fall back to unauthenticated public activity',async()=
   try{const response=await worker.fetch(new Request('https://site.test/api/github/commits'),{GITHUB_TOKEN:'revoked-test-token'});assert.equal(response.status,200);assert.equal((await response.json()).commits.length,1);assert.equal(anonymous,4);}
   finally{globalThis.fetch=original;}
 });
-test('authorized private activity includes branch and committer details without shared caching',async()=>{
+test('authorized private activity includes details and only caches encrypted snapshots',async()=>{
   const worker=(await import('../worker/index.js?test=private-metadata')).default;
   const originalFetch=globalThis.fetch,originalCache=Object.getOwnPropertyDescriptor(globalThis,'caches');let cacheCalls=0;
-  Object.defineProperty(globalThis,'caches',{configurable:true,value:{default:{async match(){cacheCalls++;},async put(){cacheCalls++;}}}});
+  Object.defineProperty(globalThis,'caches',{configurable:true,value:{default:{async match(){cacheCalls++;},async put(request,response){cacheCalls++;const bytes=await response.clone().text();assert.ok(!bytes.includes("Private update"));assert.ok(!bytes.includes("samimustafaa/private"));assert.ok(!request.url.includes("private-test-token"));}}}});
   globalThis.fetch=async(url,options)=>{
     assert.equal(options.headers.Authorization,'Bearer private-test-token');
     const u=new URL(url);
@@ -79,7 +79,7 @@ test('authorized private activity includes branch and committer details without 
   try{
     const response=await worker.fetch(new Request('https://site.test/api/github/commits'),{GITHUB_USERNAME:'samimustafaa',GITHUB_TOKEN:'private-test-token'});
     const data=await response.json();assert.equal(response.status,200);assert.equal(data.commits.length,1);
-    const latest=data.commits[0];assert.equal(latest.private,true);assert.equal(latest.sha,privateSha);assert.equal(latest.committer,'samimustafaa');assert.deepEqual(latest.branches,['release/v2']);assert.equal(latest.date,'2026-10-10T12:00:00Z');assert.equal(data.privateAccess,true);assert.equal(cacheCalls,0);assert.deepEqual(latest.stats,{additions:521,deletions:9});assert.equal(latest.avatar,'https://avatars.githubusercontent.com/u/123');
+    const latest=data.commits[0];assert.equal(latest.private,true);assert.equal(latest.sha,privateSha);assert.equal(latest.committer,'samimustafaa');assert.deepEqual(latest.branches,['release/v2']);assert.equal(latest.date,'2026-10-10T12:00:00Z');assert.equal(data.privateAccess,true);assert.ok(cacheCalls>=2);assert.deepEqual(latest.stats,{additions:521,deletions:9});assert.equal(latest.avatar,'https://avatars.githubusercontent.com/u/123');
     assert.ok(!JSON.stringify(data).includes('private-test-token'));
   }finally{globalThis.fetch=originalFetch;if(originalCache)Object.defineProperty(globalThis,'caches',originalCache);else delete globalThis.caches;}
 });
@@ -117,4 +117,37 @@ test('search metadata, structured data, and share assets are present in server H
   const sitemap=await worker.fetch(new Request('https://site.test/sitemap.xml'));assert.match(sitemap.headers.get('Content-Type'),/application\/xml/);assert.match(await sitemap.text(),/<loc>https:\/\/sami-portfolio-studio.samimustafa072.chatgpt.site\/<\/loc>/);
   const robots=await (await worker.fetch(new Request('https://site.test/robots.txt'))).text();assert.match(robots,/Disallow: \/api\//);
   assert.equal((await worker.fetch(new Request('https://site.test/index.html'))).status,308);
+});
+
+
+test('cold requests show a candidate before a slow repository scan finishes',async()=>{
+  const worker=(await import('../worker/index.js?test=fast-candidate')).default;
+  const originalFetch=globalThis.fetch;let release;
+  const blocked=new Promise(resolve=>{release=resolve;});
+  globalThis.fetch=async url=>{const u=new URL(url);if(u.pathname==='/search/commits')return Response.json({items:[{...old,repository:{private:false,full_name:'samimustafaa/public'}}]});if(u.pathname==='/user/repos'){await blocked;return Response.json([]);}return Response.json({});};
+  const tasks=[];
+  try{
+    const response=await worker.fetch(new Request('https://site.test/api/github/commits'),{GITHUB_TOKEN:'test'},{waitUntil(task){tasks.push(task);}});
+    const data=await response.json();assert.equal(data.commits[0].sha,a);assert.equal(data.refreshing,true);
+    release();await Promise.all(tasks);
+  }finally{release();globalThis.fetch=originalFetch;}
+});
+
+test('encrypted snapshots survive a cold Worker and remain visible during upstream failure',async()=>{
+  const originalFetch=globalThis.fetch,originalCache=Object.getOwnPropertyDescriptor(globalThis,'caches');
+  const entries=new Map();
+  Object.defineProperty(globalThis,'caches',{configurable:true,value:{default:{async match(req){return entries.get(req.url)?.clone();},async put(req,res){entries.set(req.url,res.clone());}}}});
+  globalThis.fetch=async url=>Response.json(new URL(url).pathname==='/search/commits'?{items:[{...old,repository:{private:false,full_name:'samimustafaa/public'}}]}:[]);
+  const env={GITHUB_TOKEN:'snapshot-test-token'};
+  try{
+    const first=(await import('../worker/index.js?test=snapshot-write')).default;
+    await first.fetch(new Request('https://site.test/api/github/commits'),env);
+    assert.equal(entries.size,1);
+    globalThis.fetch=async()=>{throw new Error('Offline');};
+    const cold=(await import('../worker/index.js?test=snapshot-read')).default;
+    const response=await cold.fetch(new Request('https://site.test/api/github/commits'),env);
+    assert.equal(response.status,200);assert.equal((await response.json()).commits[0].sha,a);
+    const other=(await import('../worker/index.js?test=snapshot-other-token')).default;
+    assert.equal((await other.fetch(new Request('https://site.test/api/github/commits'),{GITHUB_TOKEN:'different-token'})).status,503);
+  }finally{globalThis.fetch=originalFetch;if(originalCache)Object.defineProperty(globalThis,'caches',originalCache);else delete globalThis.caches;}
 });
