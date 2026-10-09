@@ -1,4 +1,5 @@
 'use strict';
+document.title='Sami Mustafa | Developer & Instructor';
 const projects = [
   {name:'Online Voting System',type:'Web application',url:'https://online-voting-system-theta.vercel.app/',description:'An online election platform with authentication and an organized voting process.',tech:['HTML','CSS','JavaScript']},
   {name:'BookShelf App',type:'Productivity',url:'https://bookshelf-app-eta.vercel.app/',description:'A personal library to add, organize, and keep track of your read and unread books.',tech:['HTML','CSS','JavaScript']},
