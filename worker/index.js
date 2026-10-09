@@ -5,7 +5,7 @@ const flights=new Map();
 const API='https://api.github.com';
 const LIMIT=1;
 let rejectedToken;
-function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}
+function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow','X-Content-Type-Options':'nosniff'}});}
 async function cached(key,seconds,loader){
   const now=Date.now(),entry=memory.get(key);
   if(entry&&entry.until>now)return entry.value;
@@ -128,6 +128,7 @@ export default {
         return last?json({...last,stale:true}):json({error:'GitHub is temporarily unavailable. Please try again shortly.'},503);
       }
     }
+    if(url.pathname==='/index.html')return new Response(null,{status:308,headers:{Location:'/'}});
     const name=url.pathname==='/'?'/index.html':url.pathname;
     const asset=assets[name];if(!asset)return new Response('Page not found',{status:404});
     const headers={'Content-Type':asset.type,'ETag':asset.etag,'X-Content-Type-Options':'nosniff','Cache-Control':url.searchParams.get('v')===asset.etag.slice(1,-1)||name.startsWith('/assets/fonts/')||name.startsWith('/assets/tech/')?'public, max-age=31536000, immutable':name.startsWith('/assets/')?'public, max-age=86400':'public, max-age=0, must-revalidate'};

@@ -104,3 +104,17 @@ test('an expired feed returns immediately while exactly one background refresh r
     assert.equal((await refreshed.json()).refreshing,undefined);
   }finally{globalThis.fetch=originalFetch;Date.now=originalNow;}
 });
+
+test('search metadata, structured data, and share assets are present in server HTML',async()=>{
+  const worker=(await import('../dist/server/index.js?test=seo')).default;
+  const html=await (await worker.fetch(new Request('https://site.test/'))).text();
+  assert.match(html,/<title>Sami Mustafa \| Front End Developer &amp; Instructor<\/title>|<title>Sami Mustafa \| Front End Developer & Instructor<\/title>/);
+  for(const tag of ['og:title','og:description','og:url','og:image','twitter:card','twitter:image'])assert.ok(html.includes(tag));
+  const schema=JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]);
+  assert.equal(schema['@graph'].find(v=>v['@type']==='Person').name,'Sami Mustafa');
+  assert.equal((html.match(/class="project-card"/g)||[]).length,9);
+  const image=await worker.fetch(new Request('https://site.test/assets/sami-mustafa-social.png'));assert.equal(image.status,200);assert.equal(image.headers.get('Content-Type'),'image/png');
+  const sitemap=await worker.fetch(new Request('https://site.test/sitemap.xml'));assert.match(sitemap.headers.get('Content-Type'),/application\/xml/);assert.match(await sitemap.text(),/<loc>https:\/\/sami-portfolio-studio.samimustafa072.chatgpt.site\/<\/loc>/);
+  const robots=await (await worker.fetch(new Request('https://site.test/robots.txt'))).text();assert.match(robots,/Disallow: \/api\//);
+  assert.equal((await worker.fetch(new Request('https://site.test/index.html'))).status,308);
+});

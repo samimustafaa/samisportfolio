@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://sami-portfolio-studio.samimustafa072.chatgpt.site/sitemap.xml
