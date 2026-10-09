@@ -22,6 +22,34 @@ async function cached(key,seconds,loader){
   })();
   flights.set(key,task);try{return await task;}finally{flights.delete(key);}
 }
+// Only ciphertext enters the internal edge cache; private metadata never uses a public response cache.
+async function snapshotContext(username,env){
+  if(!env.GITHUB_TOKEN||!globalThis.crypto?.subtle)return null;
+  let cache;try{cache=globalThis.caches?.default;}catch{}if(!cache)return null;
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('portfolio-feed-v2:'+username+':'+env.GITHUB_TOKEN));
+  const id=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+  const key=await crypto.subtle.importKey('raw',digest,'AES-GCM',false,['encrypt','decrypt']);
+  return {cache,key,request:new Request('https://sami-portfolio-studio.samimustafa072.chatgpt.site/__feed-cache/encrypted-'+id)};
+}
+async function readSnapshot(context){
+  if(!context)return null;
+  try{
+    const hit=await context.cache.match(context.request);if(!hit)return null;
+    const bytes=new Uint8Array(await hit.arrayBuffer());
+    const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.slice(0,12)},context.key,bytes.slice(12));
+    const data=JSON.parse(new TextDecoder().decode(plain));
+    return data.commits?.length&&Date.now()-Date.parse(data.checkedAt)<86400000?data:null;
+  }catch{return null;}
+}
+async function writeSnapshot(context,data){
+  if(!context||!data.commits?.length)return;
+  try{
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    const encrypted=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},context.key,new TextEncoder().encode(JSON.stringify(data))));
+    const bytes=new Uint8Array(12+encrypted.length);bytes.set(iv);bytes.set(encrypted,12);
+    await context.cache.put(context.request,new Response(bytes,{headers:{'Content-Type':'application/octet-stream','Cache-Control':'max-age=86400'}}));
+  }catch{}
+}
 async function github(path,env,authenticatedOnly=false){
   const headers={'Accept':'application/vnd.github+json','User-Agent':'Sami-Mustafa-Portfolio','X-GitHub-Api-Version':'2022-11-28'};
   if(env.GITHUB_TOKEN&&env.GITHUB_TOKEN!==rejectedToken)headers.Authorization='Bearer '+env.GITHUB_TOKEN;
@@ -29,7 +57,7 @@ async function github(path,env,authenticatedOnly=false){
   let response=await fetch(API+path,{headers,signal:AbortSignal.timeout(12000)});
   // Public activity still works when a token has expired or been revoked.
   if(headers.Authorization&&[401,403].includes(response.status)){
-    rejectedToken=env.GITHUB_TOKEN;
+    if(response.status===401)rejectedToken=env.GITHUB_TOKEN;
     if(authenticatedOnly)throw new Error('Private GitHub access unavailable');
     delete headers.Authorization;
     response=await fetch(API+path,{headers,signal:AbortSignal.timeout(12000)});
@@ -50,7 +78,7 @@ async function parallel(items,fn){
   return output;
 }
 function newest(items){const unique=new Map();for(const item of items.filter(Boolean)){const key=item.repository+':'+item.sha,existing=unique.get(key);if(existing){existing.branches=[...new Set([...existing.branches,...item.branches])];}else unique.set(key,{...item,branches:[...item.branches]});}return [...unique.values()].sort((a,b)=>Date.parse(b.date)-Date.parse(a.date)).slice(0,LIMIT);}
-async function repositoryCommits(repo,username,env){
+async function repositoryCommits(repo,username,env,onProgress=()=>{}){
   return cached('private-repo-v1:'+repo.full_name+':'+repo.pushed_at+':'+username,86400,async()=>{
     const base='/repos/'+repo.full_name;
     const branches=[];let page=1;
@@ -58,12 +86,13 @@ async function repositoryCommits(repo,username,env){
     const lists=await parallel(branches,async branch=>{
       const params=new URLSearchParams({sha:branch.commit.sha,author:username,per_page:String(LIMIT)});
       const rows=await github(base+'/commits?'+params,env,repo.private).catch(()=>[]);
-      return rows.map(item=>normalize(item,repo.full_name,{private:repo.private,branch:branch.name}));
+      const commits=rows.map(item=>normalize(item,repo.full_name,{private:repo.private,branch:branch.name})).filter(Boolean);
+      if(commits.length)onProgress(commits);return commits;
     });
     return newest(lists.flat());
   });
 }
-async function feed(username,env){
+async function feed(username,env,onProgress=()=>{}){
   return cached('private-latest-card-v1:'+username,20,async()=>{
     const params=new URLSearchParams({q:'author:'+username+' is:public',sort:'committer-date',order:'desc',per_page:String(LIMIT)});
     // Search supplies history and contributions; direct branch requests catch fresh pushes before indexing.
@@ -73,7 +102,7 @@ async function feed(username,env){
     };
     // Start the two independent lookups together instead of waiting on search indexing.
     const [search,firstPage]=await Promise.all([
-      github('/search/commits?'+params,env).catch(()=>({items:[]})),
+      github('/search/commits?'+params,env).catch(()=>({items:[]})).then(search=>{const commits=newest((search.items||[]).filter(item=>item.repository?.private===false).map(item=>normalize(item,item.repository.full_name)));if(commits.length)onProgress({username,commits,checkedAt:new Date().toISOString(),refreshSeconds:30,privateAccess:false,sourceMode:'public',refreshing:true});return search;}),
       getRepos(1).catch(()=>null)
     ]);
     let commits=newest((search.items||[]).filter(item=>item.repository?.private===false).map(item=>normalize(item,item.repository.full_name)));
@@ -93,8 +122,9 @@ async function feed(username,env){
           if(cutoff&&Date.parse(repo.pushed_at)<cutoff){reachedOlder=true;break;}
           eligible.push(repo);
         }
-        const rows=await parallel(eligible,repo=>repositoryCommits(repo,username,env).catch(()=>[]));
+        const rows=await parallel(eligible,repo=>repositoryCommits(repo,username,env,rows=>{commits=newest([...commits,...rows]);onProgress({username,commits,checkedAt:new Date().toISOString(),refreshSeconds:30,privateAccess,sourceMode:privateAccess?'authenticated':'public',refreshing:true});}).catch(()=>[]));
         commits=newest([...commits,...rows.flat()]);
+        if(commits.length)onProgress({username,commits,checkedAt:new Date().toISOString(),refreshSeconds:30,privateAccess,sourceMode:privateAccess?'authenticated':'public',refreshing:true});
         if(reachedOlder)break;
       }
       if(reachedOlder||repos.length<100)break;page++;
@@ -117,16 +147,39 @@ export default {
     if(url.pathname==='/api/github/commits'){
       const username=env.GITHUB_USERNAME||'samimustafaa';
       if(!/^[a-z\d-]{1,39}$/i.test(username))return json({error:'GitHub feed not configured'},503);
-      const previous=memory.get('private-latest-card-v1:'+username);
-      // Keep the card responsive while a bounded refresh runs in the Worker background.
-      if(previous?.value&&previous.until<=Date.now()&&ctx.waitUntil){
-        ctx.waitUntil(feed(username,env).catch(()=>{memory.set('private-latest-card-v1:'+username,{value:{...previous.value,stale:true},until:Date.now()+15000});}));
-        return json({...previous.value,refreshing:true});
+      const key='private-latest-card-v1:'+username;
+      let previous=memory.get(key);
+      if(previous?.until>Date.now())return json(previous.value);
+      const snapshot=await snapshotContext(username,env);
+      if(!previous){const saved=await readSnapshot(snapshot);if(saved){previous={value:saved,until:Date.parse(saved.checkedAt)+20000};memory.set(key,previous);}}
+      if(previous?.until>Date.now()&&!previous.value.refreshing)return json(previous.value);
+      let firstResolve;
+      const first=new Promise(resolve=>{firstResolve=resolve;});
+      let partialWrite=Promise.resolve(),savedPartial=false;
+      const task=feed(username,env,data=>{
+        firstResolve({...data,refreshing:true});
+        if(!savedPartial&&!previous?.value?.commits?.length){savedPartial=true;partialWrite=writeSnapshot(snapshot,data);}
+        // Preserve the last result in memory while the full scan continues.
+        if(!previous?.value?.commits?.length)memory.set(key,{value:data,until:0});
+      }).then(async data=>{
+        // An empty/error response must never erase a successfully synced card.
+        if(!data.commits.length&&previous?.value?.commits?.length){data={...previous.value,stale:true,refreshing:false};memory.set(key,{value:data,until:Date.now()+15000});}
+        await partialWrite;await writeSnapshot(snapshot,data);return data;
+      }).catch(()=>{
+        const last=memory.get(key)?.value||previous?.value;
+        if(last?.commits?.length){const value={...last,stale:true,refreshing:false};memory.set(key,{value,until:Date.now()+15000});return value;}
+        return {username,commits:[],refreshing:true,refreshSeconds:30};
+      });
+      if(ctx.waitUntil){
+        ctx.waitUntil(task);
+        if(previous?.value?.commits?.length)return json({...previous.value,refreshing:true});
+        let timer;
+        const pending=new Promise(resolve=>{timer=setTimeout(()=>resolve({username,commits:[],refreshing:true,refreshSeconds:30}),2000);});
+        const result=await Promise.race([task,first,pending]);clearTimeout(timer);
+        return json(result,result.commits.length?200:202);
       }
-      try{return json(await feed(username,env));}catch{
-        const last=memory.get('private-latest-card-v1:'+username)?.value;
-        return last?json({...last,stale:true}):json({error:'GitHub is temporarily unavailable. Please try again shortly.'},503);
-      }
+      const result=await task;
+      return result.commits.length?json(result):json({error:'GitHub is temporarily unavailable. Please try again shortly.'},503);
     }
     if(url.pathname==='/index.html')return new Response(null,{status:308,headers:{Location:'/'}});
     const name=url.pathname==='/'?'/index.html':url.pathname;
