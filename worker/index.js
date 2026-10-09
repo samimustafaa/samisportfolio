@@ -131,7 +131,7 @@ export default {
     if(url.pathname==='/index.html')return new Response(null,{status:308,headers:{Location:'/'}});
     const name=url.pathname==='/'?'/index.html':url.pathname;
     const asset=assets[name];if(!asset)return new Response('Page not found',{status:404});
-    const headers={'Content-Type':asset.type,'ETag':asset.etag,'X-Content-Type-Options':'nosniff','Cache-Control':url.searchParams.get('v')===asset.etag.slice(1,-1)||name.startsWith('/assets/fonts/')||name.startsWith('/assets/tech/')?'public, max-age=31536000, immutable':name.startsWith('/assets/')?'public, max-age=86400':'public, max-age=0, must-revalidate'};
+    const headers={'Content-Type':asset.type,'ETag':asset.etag,'X-Content-Type-Options':'nosniff','Cache-Control':name==='/index.html'?'no-store':url.searchParams.get('v')===asset.etag.slice(1,-1)||name.startsWith('/assets/fonts/')||name.startsWith('/assets/tech/')?'public, max-age=31536000, immutable':name.startsWith('/assets/')?'public, max-age=86400':'public, max-age=0, must-revalidate'};
     if(request.headers.get('If-None-Match')===asset.etag)return new Response(null,{status:304,headers});
     if(request.method==='HEAD')return new Response(null,{headers});
     if(!decoded.has(name))decoded.set(name,Uint8Array.from(atob(asset.body),c=>c.charCodeAt(0)));
