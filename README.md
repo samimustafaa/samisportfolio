@@ -1,67 +1,104 @@
-# Sami Mustafa — Portfolio
+<div align="center">
 
-A fast, responsive portfolio for Sami Mustafa, front end developer and instructor based in North Macedonia.
+# 👨‍💻 **Sami Mustafa — Portfolio**
 
-[View the website](https://sami-portfolio-studio.samimustafa072.chatgpt.site) · [GitHub](https://github.com/samimustafaa) · [Contact](mailto:samimustafa072@gmail.com)
+**Front End Developer · Instructor · Always Learning**
 
-## Features
+A personal space for the things I build, the skills I develop, and the ideas I share.
 
-- Nine selected projects with animated hover previews and touch-friendly controls.
-- Interactive name typography, portrait tilt, and subtle motion effects.
-- Real technology icons, including C#, Python, and TypeScript.
-- A latest-commit card with repository visibility, branch, commit ID, committer, date, time, avatar, and real additions/deletions when available.
-- Authorized private repository activity, with all GitHub credentials kept on the server.
-- Automatic commit syncing every 30 seconds while the tab is visible.
-- Early commit fetching, per-tab response restoration, background server refreshes, and versioned asset caching.
-- Reduced-motion support, keyboard navigation, and locally hosted fonts.
+🌍 **North Macedonia** &nbsp; · &nbsp; ⚡ **Lightweight frontend** &nbsp; · &nbsp; 🔄 **Live GitHub activity**
 
-## Stack
+[🌐 **Visit the website**](https://sami-portfolio-studio.samimustafa072.chatgpt.site) &nbsp; · &nbsp; [🐙 **GitHub**](https://github.com/samimustafaa) &nbsp; · &nbsp; [✉️ **Get in touch**](mailto:samimustafa072@gmail.com)
 
-HTML, CSS, and vanilla JavaScript for the frontend; an ES module Worker for the GitHub API and static assets. The build has no third-party npm dependencies.
+</div>
 
-## Getting started
+---
 
-Requires Node.js 22 or newer.
+## ✨ **What’s inside**
+
+| Feature | Experience |
+| --- | --- |
+| 🖼️ **Project previews** | Nine selected projects with animated hover previews and touch-friendly controls. |
+| 🎨 **Interactive details** | Name animations, portrait tilt, and subtle motion effects. |
+| 🧩 **Technology icons** | Real icons for HTML, CSS, JavaScript, WordPress, React, C++, C#, Python, and TypeScript. |
+| 🐙 **Latest commit** | Repository visibility, branch, commit ID, committer, date, time, and real change counts and avatar when available. |
+| 🔄 **Automatic syncing** | GitHub activity refreshes every **30 seconds** while the tab is visible. |
+| 🔐 **Private activity** | Authorized private repository commits, with GitHub credentials kept on the server. |
+| ⚡ **Faster repeat visits** | Early commit fetching, per-tab response restoration, background refreshes, and versioned asset caching. |
+| ♿ **Accessible interactions** | Keyboard navigation, reduced-motion support, and locally hosted fonts. |
+
+## 🛠️ **Built with**
+
+**HTML · CSS · Vanilla JavaScript · ES module Worker**
+
+The frontend uses native browser APIs. The Worker serves the assets and the GitHub feed, and the build has **no third-party npm dependencies**.
+
+> 💡 The technologies listed in the portfolio’s skills section represent my broader skill set. The stack above describes this project’s implementation.
+
+## 🚀 **Run the project**
+
+**Requirement:** Node.js **22 or newer**.
 
 ```sh
 git clone https://github.com/samimustafaa/samisportfolio.git
 cd samisportfolio
+
+# Build the Worker and embedded frontend assets
 npm run build
+
+# Run the Worker tests
 npm test
 ```
 
-The build writes `dist/server/index.js`. Deploy this file with a compatible Worker host. Serving `dist/` as static files previews the frontend, but live commit syncing requires the Worker endpoint `/api/github/commits`.
+The build generates **`dist/server/index.js`**. Deploy this file with a compatible Worker host.
 
-## GitHub configuration
+Serving **`dist/`** as static files previews the frontend. Live GitHub activity requires the Worker endpoint **`/api/github/commits`**.
 
-Set these variables in your host's runtime settings:
+## 🔑 **Connect GitHub activity**
+
+Set these variables in your host’s runtime settings:
 
 | Variable | Purpose |
 | --- | --- |
-| `GITHUB_USERNAME` | GitHub username; defaults to `samimustafaa`. |
-| `GITHUB_TOKEN` | Server-side secret with read access to the repositories to include. |
+| **`GITHUB_USERNAME`** | GitHub username; defaults to `samimustafaa`. |
+| **`GITHUB_TOKEN`** | Server-side secret with read access to the repositories you want to include. |
 
-For private activity, authorize the token to read the relevant private repositories. Never put the token in frontend code or commit it to Git. `.env.example` contains variable names only; the Worker reads runtime bindings rather than loading that file itself.
+For private activity, authorize the token to read the relevant private repositories.
 
-## Project structure
+> 🔒 **Keep your token on the server.** Never add it to frontend code or commit it to Git. `.env.example` documents the variable names only; the Worker reads runtime bindings rather than loading that file itself.
 
-```text
-dist/          Frontend HTML, CSS, JavaScript, fonts, and assets
-worker/        Server-side GitHub feed and asset serving
-scripts/       Dependency-free build and live-feed check
-tests/         Worker behavior and asset checks
-```
+## 📁 **Project structure**
 
-The included `.openai/hosting.json` is a neutral build placeholder. Add your own project identity if deploying with Sites. GitHub upload does not automatically connect this repository to the current website's deployment.
+| Path | Contents |
+| --- | --- |
+| **`dist/`** | Frontend HTML, CSS, JavaScript, fonts, and icons. |
+| **`worker/`** | GitHub feed and static asset serving. |
+| **`scripts/`** | Dependency-free build and live-feed check. |
+| **`tests/`** | Worker behavior and asset checks. |
 
-## Personal assets
+The included **`.openai/hosting.json`** is a neutral build placeholder. Add your own project identity when deploying with Sites. Uploading this code to GitHub does not automatically connect the repository to the current website’s deployment.
 
-The portrait (`dist/assets/sami.webp`) and résumé (`dist/assets/Sami-Mustafa-CV.pdf`) are omitted from this public export pending approval to publish them. The frontend references these paths; add your approved files before deploying this copy.
+## 🖼️ **Personal assets**
 
-## Assets and usage
+The portrait and résumé are currently **omitted from this public export** pending approval to publish them:
 
-Font and technology icon licenses are included next to their assets. The portrait and résumé belong to Sami Mustafa. No license is granted for reuse of personal assets.
+- **Portrait:** `dist/assets/sami.webp`
+- **Résumé:** `dist/assets/Sami-Mustafa-CV.pdf`
 
-## Contact
+The frontend references these paths. Add your approved files before deploying this copy.
 
-**Sami Mustafa** — [samimustafa072@gmail.com](mailto:samimustafa072@gmail.com)
+## 📜 **Asset licenses**
+
+Font and technology icon licenses are included beside their assets. The portrait and résumé belong to **Sami Mustafa**; no license is granted for reuse of those personal assets.
+
+---
+
+<div align="center">
+
+### ✉️ **Let’s build something together**
+
+**Sami Mustafa** · [**samimustafa072@gmail.com**](mailto:samimustafa072@gmail.com)
+
+*Made with curiosity & code.*
+
+</div>
