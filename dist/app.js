@@ -13,7 +13,7 @@ const projects = [
 ];
 // A small same-origin response; credentials and GitHub requests stay on the server.
 const commitSection=document.getElementById('github'),commitList=document.getElementById('latest-commits'),commitStatus=document.getElementById('commit-status');
-let commitTimer,commitController,commitFingerprint='',commitStarted=false;
+let commitTimer,commitController,commitFingerprint='',commitStarted=false,commitRetry=0;
 const relativeTime=new Intl.RelativeTimeFormat('en',{numeric:'auto'});
 function commitAge(value){
   const seconds=Math.round((Date.parse(value)-Date.now())/1000),absolute=Math.abs(seconds);
@@ -53,6 +53,9 @@ async function syncCommits(){
     if(!response.ok)throw new Error('Unavailable');const data=await response.json();
     if(!Array.isArray(data.commits))throw new Error('Invalid feed');
     const latest=data.commits.slice(0,1);
+    if(!latest.length&&data.refreshing){commitSection.dataset.refreshing='true';commitStatus.textContent=commitStarted?'Checking for a newer commit…':'Checking GitHub for the latest commit…';return;}
+    if(!latest.length&&commitStarted){commitStatus.textContent='Keeping your last synced commit';return;}
+    commitRetry=0;
     const fingerprint=JSON.stringify(latest);
     if(fingerprint!==commitFingerprint||!commitStarted){
       commitList.replaceChildren();
@@ -66,11 +69,12 @@ async function syncCommits(){
     commitSection.dataset.state=data.stale?'error':'live';commitStatus.textContent=data.stale?'Showing the last synced commit':!data.privateAccess?'Public activity · private activity needs GitHub access':'Synced with GitHub · public & private repositories';updateCommitDates();
   }catch(error){
     if(error.name==='AbortError'&&document.hidden)return;
+    commitRetry=Math.min(commitRetry+1,4);commitSection.dataset.refreshing='true';
     commitSection.dataset.state='error';commitStatus.textContent=commitStarted?'Keeping your last update · retrying shortly':'GitHub is temporarily unavailable · retrying shortly';
     if(!commitStarted){const placeholder=commitList.querySelector('.commit-placeholder');if(placeholder)placeholder.textContent='You can still view my activity directly on GitHub.';}
   }finally{
     clearTimeout(timeout);commitController=null;
-    if(!document.hidden)commitTimer=setTimeout(syncCommits,commitSection.dataset.refreshing==='true'?1500:Math.max(1000,30000-(Date.now()-pollStarted)));
+    if(!document.hidden)commitTimer=setTimeout(syncCommits,commitSection.dataset.refreshing==='true'?Math.min(2000*2**commitRetry,15000):Math.max(1000,30000-(Date.now()-pollStarted)));
   }
 }
 document.addEventListener('visibilitychange',()=>{
@@ -81,7 +85,7 @@ document.addEventListener('visibilitychange',()=>{
 // Restore only this tab's recent response; live GitHub validation starts immediately.
 try{
   const saved=JSON.parse(sessionStorage.getItem('sami-latest-commit-v1'));
-  if(saved&&Date.now()-saved.savedAt<300000&&saved.commits?.length===1){
+  if(saved&&Date.now()-saved.savedAt<86400000&&saved.commits?.length===1){
     const item=saved.commits[0];
     if(/^[a-f0-9]{40}$/i.test(item.sha)&&Number.isFinite(Date.parse(item.date))&&/^https:\/\/github\.com\//.test(item.url)){
       commitList.replaceChildren(renderCommit(item,false));commitFingerprint=JSON.stringify(saved.commits);commitStarted=true;
@@ -172,7 +176,7 @@ document.addEventListener('keydown',e=>{
 });
 document.addEventListener('pointerdown',e=>{if(locked&&preview.matches(':popover-open')&&!preview.contains(e.target)&&!e.target.closest('.preview-trigger'))closePreview(true);});
 let scrollPending=false;const progress=document.querySelector('.progress');
-window.addEventListener('scroll',()=>{if(!locked)closePreview();if(scrollPending)return;scrollPending=true;requestAnimationFrame(()=>{const total=document.documentElement.scrollHeight-innerHeight;progress.style.transform=`scaleX(${total>0?scrollY/total:0})`;scrollPending=false;});},{passive:true});
+window.addEventListener('scroll',()=>{if(!locked&&current!==-1)closePreview();if(scrollPending)return;scrollPending=true;requestAnimationFrame(()=>{const total=document.documentElement.scrollHeight-innerHeight;progress.style.transform=`scaleX(${total>0?scrollY/total:0})`;scrollPending=false;});},{passive:true});
 window.addEventListener('resize',()=>closePreview());
 // Warm one demo only when visitors reach the projects, after the main page is ready.
 if(!coarse.matches&&'IntersectionObserver' in window&&!navigator.connection?.saveData&&!/2g/.test(navigator.connection?.effectiveType||'')){
