@@ -1,0 +1,1 @@
+{"name":"sami-portfolio","private":true,"type":"module","scripts":{"build":"node scripts/build-worker.mjs","test":"node --test tests/worker.test.mjs"}}

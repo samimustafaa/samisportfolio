@@ -54,6 +54,10 @@ tests/         Worker behavior and asset checks
 
 The included `.openai/hosting.json` is a neutral build placeholder. Add your own project identity if deploying with Sites. GitHub upload does not automatically connect this repository to the current website's deployment.
 
+## Personal assets
+
+The portrait (`dist/assets/sami.webp`) and résumé (`dist/assets/Sami-Mustafa-CV.pdf`) are omitted from this public export pending approval to publish them. The frontend references these paths; add your approved files before deploying this copy.
+
 ## Assets and usage
 
 Font and technology icon licenses are included next to their assets. The portrait and résumé belong to Sami Mustafa. No license is granted for reuse of personal assets.

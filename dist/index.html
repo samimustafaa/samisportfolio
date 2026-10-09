@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#eef4fa">
+  <meta name="description" content="Sami Mustafa, front end developer and instructor. Explore my web projects, experience, and the things I'm building.">
+  <title>Sami Mustafa — Developer & Instructor</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/dm-sans.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preload" href="assets/fonts/manrope.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preload" href="assets/sami.webp" as="image" fetchpriority="high">
+  <link rel="stylesheet" href="style.css">
+  <script>window.initialCommitRequest=fetch('/api/github/commits',{cache:'no-store',signal:AbortSignal.timeout(20000)});window.initialCommitRequest.catch(()=>{});</script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="ambient" aria-hidden="true"><div class="ambient-box"></div></div>
+  <div class="progress" aria-hidden="true"></div>
+  <header class="header wrap">
+    <a class="brand" href="#top" aria-label="Sami Mustafa home">sm<span>.</span></a>
+    <nav aria-label="Main navigation"><a href="#work">Work <span>09</span></a><a href="#about">About</a><a href="mailto:samimustafa072@gmail.com" class="nav-contact">samimustafa072@gmail.com</a></nav>
+  </header>
+  <main id="main" class="wrap">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="tiny-cross" aria-hidden="true">+</span> FRONT END DEVELOPER & INSTRUCTOR</div>
+        <h1 id="hero-title" class="interactive-name" aria-label="Sami Mustafa" tabindex="0"><span class="name-line" aria-hidden="true"><span class="name-letter">S</span><span class="name-letter">a</span><span class="name-letter">m</span><span class="name-letter">i</span></span><span class="name-line" aria-hidden="true"><span class="name-letter">M</span><span class="name-letter">u</span><span class="name-letter">s</span><span class="name-letter">t</span><span class="name-letter">a</span><span class="name-letter">f</span><span class="name-letter">a</span><span class="period name-letter">.</span></span></h1>
+        <p class="hero-intro">I build for the web.<br><span>And teach others to do the same.</span></p>
+        <div class="hero-actions"><a class="button primary" href="#work">Explore my work</a><a class="text-link" href="assets/Sami-Mustafa-CV.pdf" target="_blank" rel="noopener">View résumé <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v5h5M10 12h5M10 16h5"/></svg></a></div>
+        <div class="hero-note"><span class="line"></span> Student. Developer. Always learning.</div>
+      </div>
+      <div class="portrait-area">
+        <div class="portrait-top"><span>BASED IN NORTH MACEDONIA</span><span>01 / PROFILE</span></div>
+        <div class="portrait-frame" data-tilt><img src="assets/sami.webp" alt="Portrait of Sami Mustafa" width="640" height="679" fetchpriority="high"><div class="portrait-label"><span>Sami Mustafa</span><span>Developer & instructor</span></div></div>
+        <div class="portrait-bottom"><span class="cross" aria-hidden="true">✳</span><p>Turning curiosity into<br><strong>something you can use.</strong></p><span class="corner-code" aria-hidden="true">&lt;/&gt;</span></div>
+      </div>
+    </section>
+    <div class="social-strip"><span class="social-label">FIND ME ONLINE</span><a href="https://github.com/samimustafaa" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19c-4 1-4-2-6-2m12 5v-4a3.5 3.5 0 0 0-1-3c3-.4 6-1.5 6-6a4.7 4.7 0 0 0-1.3-3.3A4.4 4.4 0 0 0 18.6 2S17.4 1.6 15 3a13.4 13.4 0 0 0-6 0C6.6 1.6 5.4 2 5.4 2a4.4 4.4 0 0 0-.1 3.7A4.7 4.7 0 0 0 4 9c0 4.5 3 5.6 6 6a3.5 3.5 0 0 0-1 3v4"/></svg>GitHub</a><a href="https://www.linkedin.com/in/samimustafaa/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 10v7m0-10v.1M11 17v-7m0 3c0-4 6-4 6 0v4"/></svg>LinkedIn</a><a href="https://x.com/ssamicodes" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 3 16 18h-4L0 3zm16 0L4 21"/></svg>Twitter / X</a><a href="mailto:samimustafa072@gmail.com"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 5 9 8 9-8"/></svg>Email</a></div>
+    <section id="work" class="work" aria-labelledby="work-title">
+      <div class="section-heading"><div><span class="eyebrow">01 / SELECTED PROJECTS</span><h2 id="work-title">A few things I’ve built<span>.</span></h2></div><p class="preview-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 2 14 10-7 1-3 7z"/></svg><span>Hover to take a closer look</span></p></div>
+      <div class="project-grid" id="projects"></div>
+    </section>
+    <section id="github" class="github-section" aria-labelledby="github-title">
+      <header class="commit-notification-header"><div class="notification-heading"><span class="sync-indicator" aria-hidden="true"></span><h2 id="github-title">Latest commit notification</h2><span id="header-privacy" class="commit-privacy" hidden></span></div><span class="sync-interval"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Auto-syncs every 30s</span></header>
+      <span id="commit-status" class="commit-connection-status" role="status">Connecting to GitHub…</span>
+      <div id="latest-commits" class="commit-list" aria-label="Latest GitHub commit"><p class="commit-placeholder">Loading latest commit…</p></div>
+      <noscript><p><a href="https://github.com/samimustafaa" target="_blank" rel="noopener">View my commits on GitHub</a></p></noscript>
+    </section>
+    <section id="about" class="about" aria-labelledby="about-title">
+      <div class="about-copy"><span class="eyebrow">02 / A LITTLE ABOUT ME</span><h2 id="about-title">Learning by doing.<br><span>Sharing by teaching.</span></h2><p>I’m Sami, a front end developer and student. I work with <strong>HTML, CSS, JavaScript, and WordPress</strong>, and I’m continuing to deepen my understanding of <strong>React and C++</strong>.</p><p>I enjoy making useful things, exploring new ideas, and helping the next generation of developers find their feet.</p><div class="skills" aria-label="Technologies"><span><img src="assets/tech/html5.svg" alt="" width="22" height="22" loading="lazy" decoding="async">HTML</span><span><img src="assets/tech/css3.svg" alt="" width="22" height="22" loading="lazy" decoding="async">CSS</span><span><img src="assets/tech/javascript.svg" alt="" width="22" height="22" loading="lazy" decoding="async">JavaScript</span><span><img src="assets/tech/wordpress.svg" alt="" width="22" height="22" loading="lazy" decoding="async">WordPress</span><span><img src="assets/tech/react.svg" alt="" width="22" height="22" loading="lazy" decoding="async">React</span><span><img src="assets/tech/cplusplus.svg" alt="" width="22" height="22" loading="lazy" decoding="async">C++</span><span><img src="assets/tech/csharp.svg" alt="" width="22" height="22" loading="lazy" decoding="async">C#</span><span><img src="assets/tech/python.svg" alt="" width="22" height="22" loading="lazy" decoding="async">Python</span><span><img src="assets/tech/typescript.svg" alt="" width="22" height="22" loading="lazy" decoding="async">TypeScript</span></div></div>
+      <div class="experience"><span class="eyebrow">WHERE I’VE BEEN</span><article><span class="experience-number">01</span><div><span class="role">Instructor</span><h3><a href="https://digitalschool.edu.mk/" target="_blank" rel="noopener">Digital School Macedonia</a></h3><p>Helping students get started with code and build their skills.</p></div></article><article><span class="experience-number">02</span><div><span class="role">Internship / Junior Front End Developer</span><h3>Zero Gravity Solutions L.L.C</h3><p>Building experience through practical front end development.</p></div></article><a class="text-link" href="assets/Sami-Mustafa-CV.pdf" target="_blank" rel="noopener">Explore my résumé <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7zM14 3v5h5M10 12h5M10 16h5"/></svg></a></div>
+    </section>
+    <section id="contact" class="contact" aria-labelledby="contact-title"><div><span class="eyebrow">03 / SAY HELLO</span><h2 id="contact-title">Have something in mind?<br><span>Let’s make it happen.</span></h2></div><a class="button primary" href="mailto:samimustafa072@gmail.com">Get in touch <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 5 9 8 9-8"/></svg></a></section>
+  </main>
+  <footer class="footer wrap"><a class="brand" href="#top" aria-label="Back to top">sm<span>.</span></a><p>© <span id="year">2026</span> Sami Mustafa</p><span>Made with curiosity & code.</span></footer>
+  <div id="project-preview" class="preview" popover="manual" role="dialog" aria-modal="false" aria-labelledby="preview-title"><div class="preview-bar"><div class="browser-dots" aria-hidden="true"><i></i><i></i><i></i></div><span id="preview-domain"></span><button class="close-preview" aria-label="Close project preview">×</button></div><div id="preview-screen" class="preview-screen"></div><div class="preview-info"><span class="eyebrow" id="preview-type"></span><h3 id="preview-title"></h3><p id="preview-description"></p><a class="button primary" id="preview-link" target="_blank" rel="noopener">Open project</a></div></div>
+</body>
+</html>
