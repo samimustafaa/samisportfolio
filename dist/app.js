@@ -13,7 +13,7 @@ const projects = [
 ];
 // A small same-origin response; credentials and GitHub requests stay on the server.
 const commitSection=document.getElementById('github'),commitList=document.getElementById('latest-commits'),commitStatus=document.getElementById('commit-status');
-let commitTimer,commitController,commitFingerprint='',commitStarted=false,commitRetry=0;
+let commitTimer,commitController,commitFingerprint='',commitStarted=false,commitRetry=0,commitIdentity='',commitDate=0,commitFlash;
 const relativeTime=new Intl.RelativeTimeFormat('en',{numeric:'auto'});
 function commitAge(value){
   const seconds=Math.round((Date.parse(value)-Date.now())/1000),absolute=Math.abs(seconds);
@@ -38,8 +38,16 @@ function renderCommit(item,isNew){
   const relative=document.createElement('time');relative.className='commit-relative';relative.dateTime=item.date;relative.textContent=commitAge(item.date);bottom.append(relative);
   const exact=document.createElement('time');exact.className='commit-exact';exact.dateTime=item.date;exact.title=new Intl.DateTimeFormat('en-GB',{dateStyle:'full',timeStyle:'long'}).format(new Date(item.date));exact.textContent=new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short'}).format(new Date(item.date));bottom.append(exact);row.append(bottom);
   const details=document.createElement('details');details.className='commit-id-details';const summary=document.createElement('summary');summary.textContent='Full commit ID';const full=document.createElement('code');full.textContent=item.sha;details.append(summary,full);row.append(details);
-  const badge=document.getElementById('header-privacy');badge.hidden=false;badge.className='commit-privacy'+(item.private?' is-private':'');badge.textContent=item.private?'Private repo':'Public repo';
   return row;
+}
+// One overlay survives metadata updates, so only a new commit triggers the highlight.
+function highlightCommit(item){
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  let overlay=commitSection.querySelector('.commit-flash');
+  if(!overlay){overlay=document.createElement('div');overlay.className='commit-flash';overlay.setAttribute('aria-hidden','true');commitSection.append(overlay);}
+  commitFlash?.cancel();
+  overlay.style.backgroundColor=item.private?'#f97316':'#22c55e';
+  commitFlash=overlay.animate([{opacity:0},{opacity:.18,offset:.12},{opacity:.18,offset:.4},{opacity:0}],{duration:3000,easing:'ease-in-out'});
 }
 function updateCommitDates(){commitSection.querySelectorAll('.commit-relative').forEach(time=>{time.textContent=commitAge(time.dateTime);});}
 async function syncCommits(){
@@ -56,12 +64,16 @@ async function syncCommits(){
     if(!latest.length&&data.refreshing){commitSection.dataset.refreshing='true';commitStatus.textContent=commitStarted?'Checking for a newer commit…':'Checking GitHub for the latest commit…';return;}
     if(!latest.length&&commitStarted){commitStatus.textContent='Keeping your last synced commit';return;}
     commitRetry=0;
+    const item=latest[0],identity=item?item.repository+':'+item.sha:'';
+    const isNew=Boolean(commitIdentity&&identity&&identity!==commitIdentity&&Date.parse(item.date)>=commitDate);
     const fingerprint=JSON.stringify(latest);
     if(fingerprint!==commitFingerprint||!commitStarted){
       commitList.replaceChildren();
       if(!latest.length){const empty=document.createElement('p');empty.className='commit-placeholder';empty.textContent='No commits found yet.';commitList.append(empty);}
-      latest.forEach(item=>commitList.append(renderCommit(item,commitStarted)));
+      latest.forEach(item=>commitList.append(renderCommit(item,isNew)));
       commitFingerprint=fingerprint;
+      if(isNew)highlightCommit(item);
+      commitIdentity=identity;if(item)commitDate=Date.parse(item.date);
     }
     try{if(latest.length)sessionStorage.setItem('sami-latest-commit-v1',JSON.stringify({savedAt:Date.now(),commits:latest}));}catch{}
     commitStarted=true;
@@ -81,6 +93,7 @@ document.addEventListener('visibilitychange',()=>{
   clearTimeout(commitTimer);if(document.hidden){commitController?.abort();return;}
   updateCommitDates();if(commitStarted||commitSection.dataset.started==='true')syncCommits();
 });
+// The timer above polls while the page is visible; no click or reload is needed.
 // Start once the page is ready, including when opened in the embedded Site preview.
 // Restore only this tab's recent response; live GitHub validation starts immediately.
 try{
@@ -88,7 +101,7 @@ try{
   if(saved&&Date.now()-saved.savedAt<86400000&&saved.commits?.length===1){
     const item=saved.commits[0];
     if(/^[a-f0-9]{40}$/i.test(item.sha)&&Number.isFinite(Date.parse(item.date))&&/^https:\/\/github\.com\//.test(item.url)){
-      commitList.replaceChildren(renderCommit(item,false));commitFingerprint=JSON.stringify(saved.commits);commitStarted=true;
+      commitList.replaceChildren(renderCommit(item,false));commitFingerprint=JSON.stringify(saved.commits);commitStarted=true;commitIdentity=item.repository+':'+item.sha;commitDate=Date.parse(item.date);
       commitStatus.textContent='Checking for a newer commit…';
     }
   }
