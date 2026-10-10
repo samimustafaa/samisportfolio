@@ -44,3 +44,6 @@
 .about-copy .tech-csharp{color:#6844a1}
 .about-copy .tech-python{color:#326b92}
 .about-copy .tech-typescript{color:#2164a3}
+
+/* Animate opacity on a small overlay rather than repainting the entire page. */
+.github-section{position:relative;isolation:isolate}.commit-flash{position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;z-index:2}
