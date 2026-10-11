@@ -53,3 +53,5 @@ body:has(.preview.touch-open){overflow:hidden}
 .preview-loading strong{font-size:20px;line-height:1.4}.preview-loading span{font-size:12px;color:var(--muted)}
 .preview-screen:has(iframe.is-ready:not([hidden])) .preview-loading{display:none}
 .preview-screen>[hidden]{display:none}
+
+#school-link{text-decoration:underline;text-decoration-color:#b1c7dd;text-underline-offset:5px;transition:color .2s,text-decoration-color .2s}#school-link:hover,#school-link:focus-visible{color:var(--accent);text-decoration-color:var(--accent)}.school-preview-trigger{margin:3px 0 13px;font-size:12px;padding:7px 10px}.school-preview-trigger svg{width:18px;height:18px}
