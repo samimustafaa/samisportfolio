@@ -109,97 +109,11 @@ try{
 commitSection.dataset.started='true';
 if(!document.hidden)syncCommits();
 const eye='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
-if(!document.getElementById('projects').children.length)document.getElementById('projects').innerHTML=projects.map((p,i)=>`<article class="project-card" data-project="${i}"><div class="project-top"><span class="project-index">${String(i+1).padStart(2,'0')} /</span><span class="project-category">${p.type}</span></div><h3><a href="${p.url}" target="_blank" rel="noopener">${p.name}</a></h3><p>${p.description}</p><div class="project-bottom"><div class="tech">${p.tech.map(t=>`<span>${t}</span>`).join('')}</div><button class="preview-trigger" aria-label="Preview ${p.name}" aria-controls="project-preview" aria-haspopup="dialog">${eye} Preview</button></div></article>`).join('');
+if(!document.getElementById('projects').children.length)document.getElementById('projects').innerHTML=projects.map((p,i)=>`<article class="project-card" data-project="${i}"><div class="project-top"><span class="project-index">${String(i+1).padStart(2,'0')} /</span><span class="project-category">${p.type}</span></div><h3><a href="${p.url}" target="_blank" rel="noopener">${p.name}</a></h3><p>${p.description}</p><div class="project-bottom"><div class="tech">${p.tech.map(t=>`<span>${t}</span>`).join('')}</div><a class="preview-trigger" href="${p.url}" target="_blank" rel="noopener" aria-label="Preview ${p.name} (opens in a new tab)">${eye} Preview</a></div></article>`).join('');
 document.getElementById('year').textContent=new Date().getFullYear();
-const preview=document.getElementById('project-preview'), screen=document.getElementById('preview-screen');
 const coarse=matchMedia('(hover:none), (pointer:coarse)'), reduced=matchMedia('(prefers-reduced-motion:reduce)');
-let current=-1, hideTimer, trigger, locked=false, suppressFocus=false, previewAnimation, lastPoint={x:0,y:0};
-const frames=new Map();
-const loading=document.createElement('div');loading.className='preview-loading';loading.setAttribute('aria-live','polite');
-const loadingTitle=document.createElement('strong'),loadingNote=document.createElement('span');
-loading.append(loadingTitle,loadingNote);screen.append(loading);
-let overview;
-function getFrame(i){
-  const cached=frames.get(i);
-  if(cached){frames.delete(i);frames.set(i,cached);return cached;}
-  const p=projects[i],frame=document.createElement('iframe');
-  frame.hidden=true;frame.title=p.name+' live preview';frame.tabIndex=-1;
-  frame.setAttribute('sandbox','allow-scripts allow-same-origin');frame.setAttribute('referrerpolicy','no-referrer');frame.setAttribute('aria-hidden','true');
-  frame.addEventListener('load',()=>frame.classList.add('is-ready'),{once:true});
-  frame.src=p.url;screen.append(frame);frames.set(i,frame);
-  // Retain at most two live previews so revisits are fast without keeping every app running.
-  while(frames.size>2){const oldest=frames.keys().next().value;frames.get(oldest).remove();frames.delete(oldest);}
-  return frame;
-}
-function positionPreview(x,y){
-  if(locked)return;
-  const width=preview.offsetWidth||380,height=preview.offsetHeight||430;
-  let left=x+24;if(left+width>innerWidth-16)left=x-width-24;
-  left=Math.max(12,Math.min(left,innerWidth-width-12));
-  let top=y-110;top=Math.max(12,Math.min(top,innerHeight-height-12));
-  preview.style.left=left+'px';preview.style.top=top+'px';
-}
-function showPreview(i,button,point,touch=false){
-  const changed=current!==i;
-  clearTimeout(hideTimer);trigger=button;locked=touch;
-  preview.classList.toggle('touch-open',touch);preview.setAttribute('aria-modal',String(touch));
-  if(current!==i){
-    current=i;const p=projects[i];
-    document.getElementById('preview-title').textContent=p.name;
-    document.getElementById('preview-type').textContent=p.repo?'SOURCE CODE / API PROJECT':p.unavailable?'PROJECT OVERVIEW':p.type;
-    document.getElementById('preview-description').textContent=p.description;
-    document.getElementById('preview-domain').textContent=new URL(p.url).hostname;
-    const link=document.getElementById('preview-link');link.href=p.url;link.textContent=p.repo?'View on GitHub':'Open project';
-    for(const frame of frames.values())frame.hidden=true;
-    overview?.remove();overview=null;
-    loading.hidden=false;loadingTitle.textContent=p.name;loadingNote.textContent='Loading live preview…';
-    if(p.repo||p.unavailable){
-      const info=document.createElement('div');info.className='repo-preview';
-      info.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8 4 12l4 4m8-8 4 4-4 4m-3-10-2 16"/></svg>';
-      const title=document.createElement('strong');title.textContent=p.name;info.append(title);
-      const note=document.createElement('span');note.textContent=p.repo?'samicodess / superhero-app':'The original live demo is currently unavailable.';info.append(note);
-      const tech=document.createElement('span');tech.textContent=p.tech.join(' · ');info.append(tech);screen.append(info);overview=info;loading.hidden=true;
-    }else{
-      getFrame(i).hidden=false;
-    }
-  }
-  const opening=!preview.matches(':popover-open');
-  if(opening)preview.showPopover();
-  screen.style.setProperty('--preview-scale',String(screen.clientWidth/1280));
-  if(!touch){const rect=button.closest('.project-card').getBoundingClientRect();positionPreview(point?.x??rect.right-100,point?.y??rect.top+60);}else{preview.querySelector('.close-preview').focus();}
-  if((opening||changed)&&!reduced.matches){previewAnimation?.cancel();previewAnimation=preview.animate([{opacity:0,transform:'translateY(8px) scale(.97)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:220,easing:'cubic-bezier(.22,1,.36,1)'});}
-}
-function closePreview(restore=false){clearTimeout(hideTimer);if(preview.matches(':popover-open'))preview.hidePopover();preview.classList.remove('touch-open');locked=false;if(restore&&trigger){suppressFocus=true;trigger.focus({preventScroll:true});suppressFocus=false;}}
-function scheduleClose(){if(!locked){clearTimeout(hideTimer);hideTimer=setTimeout(()=>closePreview(),180);}}
-document.querySelectorAll('.project-card').forEach((card,i)=>{
-  const button=card.querySelector('.preview-trigger');
-  card.addEventListener('pointerenter',e=>{if(coarse.matches||locked)return;lastPoint={x:e.clientX,y:e.clientY};showPreview(i,button,lastPoint);});
-  card.addEventListener('pointerleave',scheduleClose);
-  button.addEventListener('click',e=>{e.preventDefault();showPreview(i,button,null,true);});
-  button.addEventListener('focus',()=>{if(!suppressFocus&&!locked&&!coarse.matches)showPreview(i,button);});
-  card.addEventListener('focusout',e=>{if(!card.contains(e.relatedTarget)&&!preview.contains(e.relatedTarget))scheduleClose();});
-});
-preview.addEventListener('pointerenter',()=>clearTimeout(hideTimer));preview.addEventListener('pointerleave',scheduleClose);
-preview.addEventListener('focusin',()=>clearTimeout(hideTimer));
-preview.addEventListener('focusout',e=>{if(!preview.contains(e.relatedTarget))scheduleClose();});
-preview.querySelector('.close-preview').addEventListener('click',()=>closePreview(true));
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&preview.matches(':popover-open')){e.preventDefault();closePreview(true);}
-  if(e.key==='Tab'&&locked){const items=preview.querySelectorAll('button,a'),first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
-});
-document.addEventListener('pointerdown',e=>{if(locked&&preview.matches(':popover-open')&&!preview.contains(e.target)&&!e.target.closest('.preview-trigger'))closePreview(true);});
 let scrollPending=false;const progress=document.querySelector('.progress');
-window.addEventListener('scroll',()=>{if(!locked&&current!==-1)closePreview();if(scrollPending)return;scrollPending=true;requestAnimationFrame(()=>{const total=document.documentElement.scrollHeight-innerHeight;progress.style.transform=`scaleX(${total>0?scrollY/total:0})`;scrollPending=false;});},{passive:true});
-window.addEventListener('resize',()=>closePreview());
-// Warm one demo only when visitors reach the projects, after the main page is ready.
-if(!coarse.matches&&'IntersectionObserver' in window&&!navigator.connection?.saveData&&!/2g/.test(navigator.connection?.effectiveType||'')){
-  const warm=new IntersectionObserver(entries=>{
-    if(!entries.some(e=>e.isIntersecting))return;warm.disconnect();
-    const warmFirst=()=>{if(!frames.size)getFrame(0);};
-    const scheduleWarm=()=>{if('requestIdleCallback' in window)requestIdleCallback(warmFirst);else setTimeout(warmFirst,1000);};
-    if(document.readyState==='complete')scheduleWarm();else window.addEventListener('load',scheduleWarm,{once:true});
-  },{threshold:.01});warm.observe(document.getElementById('work'));
-}
+window.addEventListener('scroll',()=>{if(scrollPending)return;scrollPending=true;requestAnimationFrame(()=>{const total=document.documentElement.scrollHeight-innerHeight;progress.style.transform=`scaleX(${total>0?scrollY/total:0})`;scrollPending=false;});},{passive:true});
 if(!reduced.matches&&'IntersectionObserver' in window){
   const observer=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');observer.unobserve(entry.target);}});},{threshold:.08});
   document.querySelectorAll('.project-card,.about-copy,.experience,.contact').forEach(el=>{el.classList.add('reveal-ready');observer.observe(el);});
@@ -210,7 +124,6 @@ document.getElementById('project-total').textContent=String(projects.length).pad
 projectFilters.addEventListener('click',event=>{
   const button=event.target.closest('[data-filter]');
   if(!button||button.getAttribute('aria-pressed')==='true')return;
-  closePreview();
   projectFilters.querySelectorAll('[data-filter]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));
   let visible=0;
   projectCards.forEach(card=>{
