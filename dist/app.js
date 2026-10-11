@@ -1,15 +1,15 @@
 'use strict';
 document.title='Sami Mustafa | Developer & Instructor';
 const projects = [
-  {name:'Online Voting System',type:'Web application',url:'https://online-voting-system-theta.vercel.app/',description:'An online election platform with authentication and an organized voting process.',tech:['HTML','CSS','JavaScript']},
-  {name:'BookShelf App',type:'Productivity',url:'https://bookshelf-app-eta.vercel.app/',description:'A personal library to add, organize, and keep track of your read and unread books.',tech:['HTML','CSS','JavaScript']},
-  {name:'Story Builder',type:'Creative tool',url:'https://samicodess.github.io/storybuilder/',description:'Create and organize stories with customizable templates and interactive tools.',tech:['HTML','CSS','JavaScript'],unavailable:true},
-  {name:'Recruiter Management',type:'Web application',url:'https://samicodess.github.io/recruiter-management/',description:'Manage candidates and keep track of who has been interviewed, all in one place.',tech:['HTML','CSS','JavaScript'],unavailable:true},
-  {name:'Math Blitz Challenge',type:'Interactive game',url:'https://math-blitz-challenge.vercel.app/',description:'Put your math skills to the test in Time Trial, Survival, and Hardcore modes.',tech:['HTML','CSS','JavaScript']},
-  {name:'SuperHero App',type:'API project',url:'https://github.com/samicodess/superhero-app',description:'Explore superhero power stats, biographies, appearances, and connections.',tech:['HTML','CSS','JavaScript','API'],repo:true},
-  {name:'Giphy AI',type:'Search & discovery',url:'https://giphyai.vercel.app/',description:'Find animated GIFs that match your search with a quick, focused discovery experience.',tech:['HTML','CSS','JavaScript','API']},
-  {name:'Beat Maker',type:'Music tool',url:'https://task-manager-bot.github.io',description:'Experiment with sounds, beats, and rhythms to find your next musical idea.',tech:['HTML','CSS','JavaScript']},
-  {name:'Nasheed Notes',type:'Listening experience',url:'https://nasheed-notes.vercel.app/',description:'A curated collection of nasheeds with a simple, focused listening experience.',tech:['HTML','CSS','JavaScript']}
+  {name:'Online Voting System',group:'tools',type:'Web application',url:'https://online-voting-system-theta.vercel.app/',description:'An online election platform with authentication and an organized voting process.',tech:['HTML','CSS','JavaScript']},
+  {name:'BookShelf App',group:'tools',type:'Productivity',url:'https://bookshelf-app-eta.vercel.app/',description:'A personal library to add, organize, and keep track of your read and unread books.',tech:['HTML','CSS','JavaScript']},
+  {name:'Story Builder',group:'creative',type:'Creative tool',url:'https://samicodess.github.io/storybuilder/',description:'Create and organize stories with customizable templates and interactive tools.',tech:['HTML','CSS','JavaScript'],unavailable:true},
+  {name:'Recruiter Management',group:'tools',type:'Web application',url:'https://samicodess.github.io/recruiter-management/',description:'Manage candidates and keep track of who has been interviewed, all in one place.',tech:['HTML','CSS','JavaScript'],unavailable:true},
+  {name:'Math Blitz Challenge',group:'games',type:'Interactive game',url:'https://math-blitz-challenge.vercel.app/',description:'Put your math skills to the test in Time Trial, Survival, and Hardcore modes.',tech:['HTML','CSS','JavaScript']},
+  {name:'SuperHero App',group:'discovery',type:'API project',url:'https://github.com/samicodess/superhero-app',description:'Explore superhero power stats, biographies, appearances, and connections.',tech:['HTML','CSS','JavaScript','API'],repo:true},
+  {name:'Giphy AI',group:'discovery',type:'Search & discovery',url:'https://giphyai.vercel.app/',description:'Find animated GIFs that match your search with a quick, focused discovery experience.',tech:['HTML','CSS','JavaScript','API']},
+  {name:'Beat Maker',group:'creative',type:'Music tool',url:'https://task-manager-bot.github.io',description:'Experiment with sounds, beats, and rhythms to find your next musical idea.',tech:['HTML','CSS','JavaScript']},
+  {name:'Nasheed Notes',group:'discovery',type:'Listening experience',url:'https://nasheed-notes.vercel.app/',description:'A curated collection of nasheeds with a simple, focused listening experience.',tech:['HTML','CSS','JavaScript']}
 ];
 // A small same-origin response; credentials and GitHub requests stay on the server.
 const commitSection=document.getElementById('github'),commitList=document.getElementById('latest-commits'),commitStatus=document.getElementById('commit-status');
@@ -204,6 +204,22 @@ if(!reduced.matches&&'IntersectionObserver' in window){
   const observer=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');observer.unobserve(entry.target);}});},{threshold:.08});
   document.querySelectorAll('.project-card,.about-copy,.experience,.contact').forEach(el=>{el.classList.add('reveal-ready');observer.observe(el);});
 }
+const projectFilters=document.querySelector('.project-filters');
+const projectCards=[...document.querySelectorAll('.project-card')];
+document.getElementById('project-total').textContent=String(projects.length).padStart(2,'0');
+projectFilters.addEventListener('click',event=>{
+  const button=event.target.closest('[data-filter]');
+  if(!button||button.getAttribute('aria-pressed')==='true')return;
+  closePreview();
+  projectFilters.querySelectorAll('[data-filter]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));
+  let visible=0;
+  projectCards.forEach(card=>{
+    const show=button.dataset.filter==='all'||projects[Number(card.dataset.project)].group===button.dataset.filter;
+    card.hidden=!show;
+    if(show){visible++;card.classList.add('visible');if(!reduced.matches)card.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],{duration:220,easing:'ease-out'});}
+  });
+  document.getElementById('project-filter-status').textContent=`Showing ${visible} of ${projects.length} projects${button.dataset.filter==='all'?'':' · '+button.textContent.trim()}`;
+});
 const name=document.getElementById('hero-title');
 const nameLetters=[...name.querySelectorAll('.name-letter')];
 let nameAnimations=[];
