@@ -112,6 +112,8 @@ const eye='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3-7 10-7 1
 if(!document.getElementById('projects').children.length)document.getElementById('projects').innerHTML=projects.map((p,i)=>`<article class="project-card" data-project="${i}"><div class="project-top"><span class="project-index">${String(i+1).padStart(2,'0')} /</span><span class="project-category">${p.type}</span></div><h3><a href="${p.url}" target="_blank" rel="noopener">${p.name}</a></h3><p>${p.description}</p><div class="project-bottom"><div class="tech">${p.tech.map(t=>`<span>${t}</span>`).join('')}</div><button type="button" class="preview-trigger" aria-label="Preview ${p.name}" aria-controls="project-preview" aria-haspopup="dialog">${eye} Preview</button></div></article>`).join('');
 document.getElementById('year').textContent=new Date().getFullYear();
 const coarse=matchMedia('(hover:none), (pointer:coarse)'), reduced=matchMedia('(prefers-reduced-motion:reduce)');
+const previewItems=[...projects,{name:'Digital School Macedonia',type:'INSTRUCTOR · 2024 – PRESENT',url:'https://digitalschool.edu.mk/',description:'Helping students get started with code and build their skills at Digital School Macedonia.'}];
+const schoolIndex=projects.length;
 const preview=document.getElementById('project-preview'), screen=document.getElementById('preview-screen');
 let current=-1, hideTimer, trigger, locked=false, suppressFocus=false, previewAnimation, lastPoint={x:0,y:0};
 const frames=new Map();
@@ -122,7 +124,7 @@ let overview;
 function getFrame(i){
   const cached=frames.get(i);
   if(cached){frames.delete(i);frames.set(i,cached);return cached;}
-  const p=projects[i],frame=document.createElement('iframe');
+  const p=previewItems[i],frame=document.createElement('iframe');
   frame.hidden=true;frame.title=p.name+' live preview';frame.tabIndex=-1;
   frame.setAttribute('sandbox','allow-scripts allow-same-origin');frame.setAttribute('referrerpolicy','no-referrer');frame.setAttribute('aria-hidden','true');
   frame.addEventListener('load',()=>frame.classList.add('is-ready'),{once:true});
@@ -144,12 +146,12 @@ function showPreview(i,button,point,touch=false){
   clearTimeout(hideTimer);trigger=button;locked=touch;
   preview.classList.toggle('touch-open',touch);preview.setAttribute('aria-modal',String(touch));
   if(current!==i){
-    current=i;const p=projects[i];
+    current=i;const p=previewItems[i];
     document.getElementById('preview-title').textContent=p.name;
     document.getElementById('preview-type').textContent=p.repo?'SOURCE CODE / API PROJECT':p.unavailable?'PROJECT OVERVIEW':p.type;
     document.getElementById('preview-description').textContent=p.description;
     document.getElementById('preview-domain').textContent=new URL(p.url).hostname;
-    const link=document.getElementById('preview-link');link.href=p.url;link.textContent=p.repo?'View on GitHub':'Open project';
+    const link=document.getElementById('preview-link');link.href=p.url;link.textContent=p.repo?'View on GitHub':i===schoolIndex?'Visit Digital School':'Open project';
     for(const frame of frames.values())frame.hidden=true;
     overview?.remove();overview=null;
     loading.hidden=false;loadingTitle.textContent=p.name;loadingNote.textContent='Loading live preview…';
@@ -166,7 +168,7 @@ function showPreview(i,button,point,touch=false){
   const opening=!preview.matches(':popover-open');
   if(opening)preview.showPopover();
   screen.style.setProperty('--preview-scale',String(screen.clientWidth/1280));
-  if(!touch){const rect=button.closest('.project-card').getBoundingClientRect();positionPreview(point?.x??rect.right-100,point?.y??rect.top+60);}else{preview.querySelector('.close-preview').focus();}
+  if(!touch){const rect=(button.closest('.project-card,.experience article')||button).getBoundingClientRect();positionPreview(point?.x??rect.right-100,point?.y??rect.top+60);}else{preview.querySelector('.close-preview').focus();}
   if((opening||changed)&&!reduced.matches){previewAnimation?.cancel();previewAnimation=preview.animate([{opacity:0,transform:'translateY(8px) scale(.97)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:220,easing:'cubic-bezier(.22,1,.36,1)'});}
 }
 function closePreview(restore=false){clearTimeout(hideTimer);if(preview.matches(':popover-open'))preview.hidePopover();preview.classList.remove('touch-open');locked=false;if(restore&&trigger){suppressFocus=true;trigger.focus({preventScroll:true});suppressFocus=false;}}
@@ -174,6 +176,22 @@ function closePreview(restore=false){clearTimeout(hideTimer);if(preview.matches(
 document.querySelectorAll('.project-card').forEach((card,i)=>{
   card.querySelector('.preview-trigger').addEventListener('click',event=>{event.preventDefault();showPreview(i,event.currentTarget,null,true);});
 });
+const schoolLink=document.getElementById('school-link'),schoolButton=document.getElementById('school-preview-button');
+function closeSchoolSoon(){
+  if(current!==schoolIndex||locked||preview.contains(document.activeElement)||document.activeElement===schoolLink)return;
+  clearTimeout(hideTimer);hideTimer=setTimeout(()=>closePreview(),180);
+}
+schoolLink.addEventListener('pointerenter',event=>{if(!coarse.matches&&!locked)showPreview(schoolIndex,schoolLink,{x:event.clientX,y:event.clientY});});
+schoolLink.addEventListener('pointerleave',closeSchoolSoon);
+schoolLink.addEventListener('focus',()=>{if(!suppressFocus&&!locked&&!coarse.matches)showPreview(schoolIndex,schoolLink);});
+schoolLink.addEventListener('blur',closeSchoolSoon);
+schoolButton.addEventListener('click',()=>showPreview(schoolIndex,schoolButton,null,true));
+preview.addEventListener('pointerenter',()=>clearTimeout(hideTimer));
+preview.addEventListener('pointerleave',closeSchoolSoon);
+preview.addEventListener('focusin',()=>clearTimeout(hideTimer));
+preview.addEventListener('focusout',()=>setTimeout(closeSchoolSoon,0));
+window.addEventListener('scroll',()=>{if(current===schoolIndex&&!locked)closePreview();},{passive:true});
+window.addEventListener('resize',()=>{if(current===schoolIndex&&!locked)closePreview();});
 preview.querySelector('.close-preview').addEventListener('click',()=>closePreview(true));
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&preview.matches(':popover-open')){e.preventDefault();closePreview(true);}
