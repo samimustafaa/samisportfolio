@@ -112,7 +112,7 @@ const eye='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3-7 10-7 1
 if(!document.getElementById('projects').children.length)document.getElementById('projects').innerHTML=projects.map((p,i)=>`<article class="project-card" data-project="${i}"><div class="project-top"><span class="project-index">${String(i+1).padStart(2,'0')} /</span><span class="project-category">${p.type}</span></div><h3><a href="${p.url}" target="_blank" rel="noopener">${p.name}</a></h3><p>${p.description}</p><div class="project-bottom"><div class="tech">${p.tech.map(t=>`<span>${t}</span>`).join('')}</div><button type="button" class="preview-trigger" aria-label="Preview ${p.name}" aria-controls="project-preview" aria-haspopup="dialog">${eye} Preview</button></div></article>`).join('');
 document.getElementById('year').textContent=new Date().getFullYear();
 const coarse=matchMedia('(hover:none), (pointer:coarse)'), reduced=matchMedia('(prefers-reduced-motion:reduce)');
-const previewItems=[...projects,{name:'Digital School Macedonia',type:'INSTRUCTOR · 2024 – PRESENT',url:'https://digitalschool.edu.mk/',description:'Helping students get started with code and build their skills at Digital School Macedonia.'}];
+const previewItems=[...projects,{name:'Digital School Macedonia',type:'INSTRUCTOR · 2024 – PRESENT',url:'https://digitalschool.com.mk/',description:'Helping students get started with code and build their skills at Digital School Macedonia.'}];
 const schoolIndex=projects.length;
 const preview=document.getElementById('project-preview'), screen=document.getElementById('preview-screen');
 let current=-1, hideTimer, trigger, locked=false, suppressFocus=false, previewAnimation, lastPoint={x:0,y:0};
@@ -121,6 +121,10 @@ const loading=document.createElement('div');loading.className='preview-loading';
 const loadingTitle=document.createElement('strong'),loadingNote=document.createElement('span');
 loading.append(loadingTitle,loadingNote);screen.append(loading);
 let overview;
+// A real, local screenshot avoids the school's iframe restriction and third-party loading.
+const schoolThumbnail=document.createElement('img');schoolThumbnail.className='website-thumbnail';
+schoolThumbnail.src='assets/digital-school-preview.webp';schoolThumbnail.alt='Digital School Macedonia homepage preview';
+schoolThumbnail.width=960;schoolThumbnail.height=511;schoolThumbnail.decoding='async';
 function getFrame(i){
   const cached=frames.get(i);
   if(cached){frames.delete(i);frames.set(i,cached);return cached;}
@@ -155,7 +159,8 @@ function showPreview(i,button,point,touch=false){
     for(const frame of frames.values())frame.hidden=true;
     overview?.remove();overview=null;
     loading.hidden=false;loadingTitle.textContent=p.name;loadingNote.textContent='Loading live preview…';
-    if(p.repo||p.unavailable){
+    if(i===schoolIndex){screen.append(schoolThumbnail);overview=schoolThumbnail;loading.hidden=true;}
+    else if(p.repo||p.unavailable){
       const info=document.createElement('div');info.className='repo-preview';
       info.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8 4 12l4 4m8-8 4 4-4 4m-3-10-2 16"/></svg>';
       const title=document.createElement('strong');title.textContent=p.name;info.append(title);
